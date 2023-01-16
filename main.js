@@ -1,10 +1,13 @@
 const vertexShaderSource = `#version 300 es
 #pragma vscode_glsllint_stage: vert
 
+uniform float uPointSize;
+uniform vec2 uPosition;
+
 void main()
 {
-    gl_Position = vec4(0.0, 0.0, 0.0, 1.0);
-    gl_PointSize = 150.0;
+    gl_PointSize = uPointSize;
+    gl_Position = vec4(uPosition, 0.0, 1.0);
 }
 `;
 
@@ -13,11 +16,14 @@ const fragmentShaderSource = `#version 300 es
 
 precision mediump float;
 
+uniform int uIndex;
+uniform vec4 uColors[3];
+
 out vec4 fragColor;
 
 void main()
 {
-    fragColor = vec4(1.0, 0.0, 0.0, 1.0);
+    fragColor = uColors[uIndex];
 }
 
 `;
@@ -45,5 +51,22 @@ if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
 }
 
 gl.useProgram(program);
+
+// Let's get the uniform locations for both the uPosition & uPointSize:
+const uPositionLocation = gl.getUniformLocation(program, 'uPosition');
+gl.uniform2f(uPositionLocation, 0, -0.2);
+
+const uPointSizeLocation = gl.getUniformLocation(program, 'uPointSize');
+gl.uniform1f(uPointSizeLocation, 100);
+
+const uIndexLocation = gl.getUniformLocation(program, 'uIndex');
+const uColorsLocation = gl.getUniformLocation(program, 'uColors');
+
+gl.uniform1i(uIndexLocation, 2);
+gl.uniform4fv(uColorsLocation, [
+    1,0,0,1,
+    0,1,0,1,
+    0,0,1,1,
+]);
 
 gl.drawArrays(gl.POINTS, 0 , 1);
