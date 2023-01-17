@@ -1,13 +1,17 @@
 const vertexShaderSource = `#version 300 es
 #pragma vscode_glsllint_stage: vert
 
-uniform float uPointSize;
-uniform vec2 uPosition;
+in float aPointSize;
+in vec2 aPosition;
+in vec3 aColor;
+
+out vec3 vColor;
 
 void main()
 {
-    gl_PointSize = uPointSize;
-    gl_Position = vec4(uPosition, 0.0, 1.0);
+    vColor = aColor;
+    gl_PointSize = aPointSize;
+    gl_Position = vec4(aPosition, 0.0, 1.0);
 }
 `;
 
@@ -16,14 +20,13 @@ const fragmentShaderSource = `#version 300 es
 
 precision mediump float;
 
-uniform int uIndex;
-uniform vec4 uColors[3];
+in vec3 vColor;
 
 out vec4 fragColor;
 
 void main()
 {
-    fragColor = uColors[uIndex];
+    fragColor = vec4(vColor, 1.0);
 }
 
 `;
@@ -47,26 +50,33 @@ gl.linkProgram(program);
 
 if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
     console.log(gl.getShaderInfoLog(vertexShader) + 'link failed');
-    console.log(gl.getShaderInfoLog(fagmentShader) + 'link failed');
+    console.log(gl.getShaderInfoLog(fragmentShader) + 'link failed');
 }
 
 gl.useProgram(program);
 
-// Let's get the uniform locations for both the uPosition & uPointSize:
-const uPositionLocation = gl.getUniformLocation(program, 'uPosition');
-gl.uniform2f(uPositionLocation, 0, -0.2);
-
-const uPointSizeLocation = gl.getUniformLocation(program, 'uPointSize');
-gl.uniform1f(uPointSizeLocation, 100);
-
-const uIndexLocation = gl.getUniformLocation(program, 'uIndex');
-const uColorsLocation = gl.getUniformLocation(program, 'uColors');
-
-gl.uniform1i(uIndexLocation, 2);
-gl.uniform4fv(uColorsLocation, [
-    1,0,0,1,
-    0,1,0,1,
-    0,0,1,1,
+const bufferData = new Float32Array([
+     0,    1,        100,      1,0,0,
+    -1,   -1,         32,      0,1,0,
+     1,   -1,         50,      0,0,1,
 ]);
 
-gl.drawArrays(gl.POINTS, 0 , 1);
+const aPositionLocation = gl.getAttribLocation(program, 'aPosition');
+const aPointSizeLocation = gl.getAttribLocation(program, 'aPointSize');
+const aColorLocation = gl.getAttribLocation(program, 'aColor');
+
+console.log(aPositionLocation, aPointSizeLocation, aColorLocation);
+
+gl.enableVertexAttribArray(aPositionLocation);
+gl.enableVertexAttribArray(aPointSizeLocation);
+gl.enableVertexAttribArray(aColorLocation);
+
+const buffer = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+gl.bufferData(gl.ARRAY_BUFFER, bufferData, gl.STATIC_DRAW);
+
+gl.vertexAttribPointer(aPositionLocation, 2, gl.FLOAT, false, 6 * 4, 0);
+gl.vertexAttribPointer(aPointSizeLocation, 1, gl.FLOAT, false, 6 * 4, 2 * 4);
+gl.vertexAttribPointer(aColorLocation, 3, gl.FLOAT, false, 6 * 4, 3 * 4);
+
+gl.drawArrays(gl.POINTS, 0 , 3);  // Three boxes with a single draw() call
