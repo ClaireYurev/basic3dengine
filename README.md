@@ -1,2 +1,5 @@
 # basic3dengine
-Experimental
+
+Uses quaternions.
+
+Experimental!
